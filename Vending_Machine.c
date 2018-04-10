@@ -53,7 +53,6 @@ void *Supplier(void *arg){
     //------------------ read configure file ---------------------
     char fileName[20];
     sprintf(fileName,"supplier%d.txt",buffIndex+1);
-    printf("%s",fileName);
     FILE *fp = fopen(fileName,"r");
     char input[3][20];
     
@@ -68,7 +67,8 @@ void *Supplier(void *arg){
     sup.interval = atoi(input[1]);
     sup.repeat = atoi(input[2]);
     sup.rep = 0;
-    //--------------------------------------------------------------   
+    //--------------------------------------------------------------
+    char stime[30];   
     while(1){    
         sleep(sup.interval);
         pthread_mutex_lock(&buffer[buffIndex].mutex);
@@ -89,7 +89,10 @@ void *Supplier(void *arg){
         }
 
         ++buffer[buffIndex].len;
-        
+        time_t clk = time(NULL);
+        strcpy(stime,ctime(&clk));
+        strtok(stime,"\n");
+        printf("%s %s supplied 1 unit. stock after = %d\n",stime,sup.name,buffer[buffIndex].len);
         
         // printPara(sup.name,sup.interval,sup.repeat,sup.rep,buffer[buffIndex].len);
 
