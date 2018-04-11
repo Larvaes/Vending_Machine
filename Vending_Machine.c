@@ -11,6 +11,7 @@
 #define SUP 5
 
 #define p_test (printf("test"))
+#define stringTime time_t clk = time(NULL); strcpy(stime,ctime(&clk)); strtok(stime,"\n");
 
 typedef struct {
     int buff[BUF_SIZE];
@@ -38,6 +39,21 @@ typedef struct {
     int rep;
 } role;
 
+int getBufferIndex(char *name){
+    if(!strcmp(name,"Lay"))
+        return 0;
+    else if(!strcmp(name,"Pote"))
+        return 1;
+    else if(!strcmp(name,"Testo"))
+        return 2;
+    else if(!strcmp(name,"Paprika"))
+        return 3;
+    else if(!strcmp(name,"Sunbite"))
+        return 4;
+
+    return -1;
+}
+
 void printPara(char *name, int interval, int repeat, int rep, int len){
         printf("---------------------------\n");
         printf("Supplied %s 1\n",name);
@@ -49,7 +65,7 @@ void printPara(char *name, int interval, int repeat, int rep, int len){
 }
 
 void *Supplier(void *arg){
-    int buffIndex = *(int*)arg;  
+    int buffIndex = *(int*)arg;   
     //------------------ read configure file ---------------------
     char fileName[20];
     sprintf(fileName,"supplier%d.txt",buffIndex+1);
@@ -74,6 +90,8 @@ void *Supplier(void *arg){
         pthread_mutex_lock(&buffer[buffIndex].mutex);
         while(buffer[buffIndex].len == BUF_SIZE){
             if(sup.rep < sup.repeat){
+                stringTime;
+                printf("%s %s supplier going to wait\n",stime,sup.name);
                 sup.rep++;  
                 pthread_mutex_unlock(&buffer[buffIndex].mutex);
                 sleep(sup.interval);
@@ -89,9 +107,7 @@ void *Supplier(void *arg){
         }
 
         ++buffer[buffIndex].len;
-        time_t clk = time(NULL);
-        strcpy(stime,ctime(&clk));
-        strtok(stime,"\n");
+        stringTime;
         printf("%s %s supplied 1 unit. stock after = %d\n",stime,sup.name,buffer[buffIndex].len);
         
         // printPara(sup.name,sup.interval,sup.repeat,sup.rep,buffer[buffIndex].len);
@@ -104,21 +120,39 @@ void *Supplier(void *arg){
 }
 
 void *Consumer(void *arg){
-    role cons = {
-        .name = "coke",
-        .interval = 1,
-        .repeat = 3,
-        .rep = 0
-    };
-    int buffIndex = *(int*)arg; 
-
+    int consumerIndex = *(int*)arg;
+    //------------------ read configure file ---------------------
+    char fileName[20];
+    sprintf(fileName,"consumer%d.txt",consumerIndex+1);
+    FILE *fp = fopen(fileName,"r");
+    char input[3][20];
+    
+    for(int i = 0; i < 3; i++){
+        fgets(input[i],20,fp);
+        strtok(input[i], "\n");
+    }
+    //-------------------------------------------------------------
+    //------------------ initialize consumer parameter ------------
+    role cons;
+    strcpy(cons.name, input[0]);
+    cons.interval = atoi(input[1]);
+    cons.repeat = atoi(input[2]);
+    cons.rep = 0;
+    //--------------------------------------------------------------
+    char stime[30];
+    int buffIndex = getBufferIndex(cons.name); 
+    if(buffIndex == -1){
+        printf("Invalid product name\n");
+        pthread_exit(0);
+    }
     while(1){
         sleep(cons.interval);
         pthread_mutex_lock(&buffer[buffIndex].mutex);
         while(buffer[buffIndex].len == 0){
             if(cons.rep < cons.repeat){
+                stringTime;
+                printf("%s %s consumer going to wait\n",stime,cons.name);
                 cons.rep++;
-                printf("wait for produce\n");
                 pthread_mutex_unlock(&buffer[buffIndex].mutex);
                 sleep(cons.interval);
                 pthread_mutex_lock(&buffer[buffIndex].mutex);
@@ -133,10 +167,9 @@ void *Consumer(void *arg){
         }
 
         --buffer[buffIndex].len;
-        printf("---------------------------\n");
-        printf("Consumed: 1\n");
-        printf("Having: %d\n",buffer[buffIndex].len);
-        printf("---------------------------\n");
+        stringTime;
+        printf("%s %s consumed 1 unit. stock after = %d\n",stime,cons.name,buffer[buffIndex].len);
+        
 
         //pthread_cond_timedwait(&buffer->empty_slot,&buffer->mutex,&cons.interval);
 
@@ -157,14 +190,11 @@ int main(){
         pthread_create(&sup[i], NULL, Supplier, index);
     }
 
-    
-
-
-    /*for(int i = 0; i < 8; i++){
+    for(int i = 0; i < 8; i++){
         int *index = malloc(sizeof(*index));
         *index = i;
         pthread_create(&cons[i], NULL, Consumer, index);
-    }*/
+    }
 
     pthread_exit(0);
     return 0;
