@@ -73,6 +73,12 @@ void *Supplier(void *arg){
     sup.rep = 0;
     //--------------------------------------------------------------
     char stime[30];   
+    if(sup.interval == 0){
+        printf("Invalid interval value, must > 0\n");
+        printf("Terminate thread\n");
+        pthread_exit(0);
+        
+    }
     while(1){    
         //sleep for interval value before attampt to add item
         sleep(sup.interval);
@@ -130,7 +136,14 @@ void *Consumer(void *arg){
     int buffIndex = getBufferIndex(cons.name); 
     if(buffIndex == -1){
         printf("Invalid product name\n");
+        printf("Terminate thread\n");
         pthread_exit(0);
+    }
+    if(cons.interval == 0){
+        printf("Invalid interval value, must > 0\n");
+        printf("Terminate thread\n");
+        pthread_exit(0);
+        
     }
     while(1){
         //sleep for interval value before attampt to remove item
