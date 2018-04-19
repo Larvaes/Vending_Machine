@@ -14,13 +14,14 @@
 #define stringTime time_t clk = time(NULL); strcpy(stime,ctime(&clk)); strtok(stime,"\n");
 
 typedef struct {
-    int buff[BUF_SIZE];
+    //product buffer
     size_t len;
     pthread_mutex_t mutex;
 } buffer_t;
 
 
 buffer_t buffer[5] = {
+    //initialize all buffer 
     {
         .len = 0,
         .mutex = PTHREAD_MUTEX_INITIALIZER
@@ -29,6 +30,7 @@ buffer_t buffer[5] = {
 
 
 typedef struct {
+    //attribute of both consumer and supplier
     char name[256];
     int interval;
     int repeat;
@@ -72,10 +74,13 @@ void *Supplier(void *arg){
     //--------------------------------------------------------------
     char stime[30];   
     while(1){    
+        //sleep for interval value before attampt to add item
         sleep(sup.interval);
         pthread_mutex_lock(&buffer[buffIndex].mutex);
         while(buffer[buffIndex].len == BUF_SIZE){
+            //check if buffer is full
             if(sup.rep < sup.repeat){
+                //check if repeat counter is more than configured repeat value
                 stringTime;
                 printf("%s %s supplier going to wait\n",stime,sup.name);
                 sup.rep++;  
@@ -128,10 +133,13 @@ void *Consumer(void *arg){
         pthread_exit(0);
     }
     while(1){
+        //sleep for interval value before attampt to remove item
         sleep(cons.interval);
         pthread_mutex_lock(&buffer[buffIndex].mutex);
         while(buffer[buffIndex].len == 0){
+            //check if buffer empty
             if(cons.rep < cons.repeat){
+                //check if repeat counter is more than configured repeat value
                 stringTime;
                 printf("%s %s consumer going to wait\n",stime,cons.name);
                 cons.rep++;
