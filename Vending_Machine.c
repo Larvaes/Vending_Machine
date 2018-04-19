@@ -17,17 +17,13 @@ typedef struct {
     int buff[BUF_SIZE];
     size_t len;
     pthread_mutex_t mutex;
-    pthread_cond_t full_slot;
-    pthread_cond_t empty_slot;
 } buffer_t;
 
 
 buffer_t buffer[5] = {
     {
         .len = 0,
-        .mutex = PTHREAD_MUTEX_INITIALIZER,
-        .full_slot = PTHREAD_COND_INITIALIZER,
-        .empty_slot = PTHREAD_COND_INITIALIZER
+        .mutex = PTHREAD_MUTEX_INITIALIZER
     }
 };
 
@@ -52,16 +48,6 @@ int getBufferIndex(char *name){
         return 4;
 
     return -1;
-}
-
-void printPara(char *name, int interval, int repeat, int rep, int len){
-        printf("---------------------------\n");
-        printf("Supplied %s 1\n",name);
-        printf("Having: %d\n",len);
-        printf("Current interval %d\n",interval);
-        printf("Current repeat %d\n",repeat);
-        printf("Current rep %d\n",rep);
-        printf("---------------------------\n");
 }
 
 void *Supplier(void *arg){
@@ -96,7 +82,6 @@ void *Supplier(void *arg){
                 pthread_mutex_unlock(&buffer[buffIndex].mutex);
                 sleep(sup.interval);
                 pthread_mutex_lock(&buffer[buffIndex].mutex);
-                //pthread_cond_timedwait(&buffer->full_slot,&buffer->mutex,&sup.interval);
             }
             else{
                 if((sup.interval * 2) < 60){
@@ -110,9 +95,6 @@ void *Supplier(void *arg){
         stringTime;
         printf("%s %s supplied 1 unit. stock after = %d\n",stime,sup.name,buffer[buffIndex].len);
         
-        // printPara(sup.name,sup.interval,sup.repeat,sup.rep,buffer[buffIndex].len);
-
-        // pthread_cond_timedwait(&buffer->full_slot,&buffer->mutex,&sup.interval);
         pthread_mutex_unlock(&buffer[buffIndex].mutex);
         
     }
@@ -156,7 +138,6 @@ void *Consumer(void *arg){
                 pthread_mutex_unlock(&buffer[buffIndex].mutex);
                 sleep(cons.interval);
                 pthread_mutex_lock(&buffer[buffIndex].mutex);
-                //pthread_cond_timedwait(&buffer->empty_slot,&buffer->mutex,&cons.interval);
             }
             else{
                 if((cons.interval * 2) < 60){
@@ -170,9 +151,6 @@ void *Consumer(void *arg){
         stringTime;
         printf("%s %s consumed 1 unit. stock after = %d\n",stime,cons.name,buffer[buffIndex].len);
         
-
-        //pthread_cond_timedwait(&buffer->empty_slot,&buffer->mutex,&cons.interval);
-
         pthread_mutex_unlock(&buffer[buffIndex].mutex);
         
     }
